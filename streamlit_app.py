@@ -11,11 +11,13 @@ st.write("The name on your Smoothie will be:", name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
+my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME")).to_pandas()
+
+fruit_list = my_dataframe["FRUIT_NAME"].tolist()
 
 ingredients_list = st.multiselect(
     "Choose up to 5 ingredients:",
-    my_dataframe,
+    fruit_list,
     max_selections=5
 )
 
@@ -25,7 +27,7 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
 
-        search_on = str(fruit_chosen).lower().strip()
+        search_on = fruit_chosen.lower().replace(" ", "%20")
         smoothiefroot_response = requests.get(
             "https://my.smoothiefroot.com/api/fruit/" + search_on
         )
