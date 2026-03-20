@@ -3,12 +3,13 @@ import requests
 import pandas as pd
 from snowflake.snowpark.functions import col
 
-# Write directly to the app
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
 name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
+
+filled = st.checkbox("Order Filled?")
 
 cnx = st.connection("snowflake")
 session = cnx.session()
@@ -36,8 +37,6 @@ if ingredients_list:
             pd_df["FRUIT_NAME"] == fruit_chosen, "SEARCH_ON"
         ].iloc[0]
 
-        st.write("The search value for", fruit_chosen, "is", search_on, ".")
-
         st.subheader(fruit_chosen + " Nutrition Information")
 
         smoothiefroot_response = requests.get(
@@ -55,8 +54,12 @@ if ingredients_list:
     time_to_insert = st.button("Submit Order")
 
     if time_to_insert:
-        my_insert_stmt = """insert into smoothies.public.orders(name_on_order, ingredients)
-                            values ('""" + name_on_order + """', '""" + ingredients_string + """')"""
+        my_insert_stmt = f"""
+            insert into smoothies.public.orders
+            (name_on_order, ingredients, order_filled)
+            values
+            ('{name_on_order}', '{ingredients_string.strip()}', {filled})
+        """
 
         session.sql(my_insert_stmt).collect()
         st.success("Your Smoothie is ordered, " + name_on_order + "!", icon="✅")
